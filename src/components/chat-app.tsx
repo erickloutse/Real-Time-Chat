@@ -13,6 +13,10 @@ import {
   UserPlus,
   Bell,
   X,
+  ChevronLeft,
+  Camera,
+  Settings,
+  Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -22,21 +26,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FileUpload } from "@/components/file-upload";
 import { VoiceRecorder } from "@/components/voice-recorder";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 interface Message {
   id: string;
@@ -115,9 +108,36 @@ export function ChatApp() {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [newFriendEmail, setNewFriendEmail] = useState("");
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+
+  useEffect(() => {
+    const checkViewport = () => {
+      setIsMobileView(window.innerWidth < 768);
+      setShowSidebar(window.innerWidth >= 768);
+    };
+
+    checkViewport();
+    window.addEventListener("resize", checkViewport);
+    return () => window.removeEventListener("resize", checkViewport);
+  }, []);
+
+  const handleChatSelect = (user: User) => {
+    setSelectedUser(user);
+    if (isMobileView) {
+      setShowSidebar(false);
+    }
+  };
+
+  const handleBackToSidebar = () => {
+    setShowSidebar(true);
+    if (isMobileView) {
+      setSelectedUser(null);
+    }
+  };
 
   const handleLogout = () => {
-    // Reset the authentication state in the parent component
     window.location.reload();
   };
 
@@ -125,7 +145,7 @@ export function ChatApp() {
     if (newFriendEmail.trim()) {
       const newRequest: FriendRequest = {
         id: Date.now(),
-        from: users[0], // Current user
+        from: users[0],
         to: newFriendEmail,
         status: "pending",
         timestamp: new Date(),
@@ -147,7 +167,6 @@ export function ChatApp() {
     );
 
     if (status === "accepted") {
-      // Add the user to the friends list
       const request = friendRequests.find((r) => r.id === requestId);
       if (request) {
         const newUser: User = {
@@ -272,323 +291,319 @@ export function ChatApp() {
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const pendingRequests = friendRequests.filter(
-    (request) => request.status === "pending"
+  const ChatArea = () => (
+    <div
+      className={cn(
+        "flex-1 flex flex-col",
+        showSidebar && isMobileView && "hidden"
+      )}
+    >
+      <div className="p-4 border-b flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {isMobileView && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBackToSidebar}
+              className="mr-2"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <Avatar className="h-10 w-10">
+            <img
+              src={selectedUser?.avatar}
+              alt={selectedUser?.name}
+              className="object-cover"
+            />
+          </Avatar>
+          <div>
+            <p className="font-medium">{selectedUser?.name}</p>
+            <p className="text-sm text-muted-foreground">online</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+            <Search className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+            <Phone className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+            <Video className="h-5 w-5" />
+          </Button>
+          <Separator
+            orientation="vertical"
+            className="h-6 hidden md:inline-flex"
+          />
+          <Button variant="ghost" size="icon">
+            <MoreVertical className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          <AnimatePresence>
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className={cn(
+                  "flex",
+                  message.sender === "me" ? "justify-end" : "justify-start"
+                )}
+              >
+                <div
+                  className={cn(
+                    "max-w-[85%] md:max-w-[70%] rounded-lg p-3",
+                    message.sender === "me"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  )}
+                >
+                  {message.type === "text" && (
+                    <p className="break-words">{message.content}</p>
+                  )}
+                  {message.type === "file" && (
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4 shrink-0" />
+                      <a
+                        href={message.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2 break-all"
+                      >
+                        {message.fileName}
+                      </a>
+                    </div>
+                  )}
+                  {message.type === "voice" && (
+                    <audio controls className="w-full max-w-[200px]">
+                      <source src={message.fileUrl} type="audio/webm" />
+                    </audio>
+                  )}
+                  <div className="flex items-center justify-end gap-1 mt-1">
+                    <p className="text-xs opacity-70">
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    {message.sender === "me" && (
+                      <div className="flex">
+                        <Check
+                          className={cn(
+                            "h-3 w-3",
+                            message.read ? "text-blue-500" : "opacity-70"
+                          )}
+                        />
+                        <Check
+                          className={cn(
+                            "h-3 w-3 -ml-1",
+                            message.read ? "text-blue-500" : "opacity-70"
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </ScrollArea>
+
+      <div className="p-4 border-t flex items-center gap-2">
+        <FileUpload onFileSelect={handleFileSelect} />
+        <VoiceRecorder onRecordingComplete={handleVoiceMessage} />
+        <Input
+          placeholder="Type a message"
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+          className="flex-1"
+        />
+        {newMessage && (
+          <Button size="icon" onClick={handleSendMessage}>
+            <Send className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+    </div>
   );
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-[350px] border-r flex flex-col">
-        {/* Header */}
-        <div className="p-4 flex items-center justify-between border-b">
-          <Avatar className="h-10 w-10" />
-          <div className="flex gap-2">
-            <ThemeToggle />
-
-            {/* Friend Requests Popover */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  {pendingRequests.length > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0"
-                    >
-                      {pendingRequests.length}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Friend Requests</h3>
-                  {pendingRequests.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No pending requests
-                    </p>
-                  ) : (
-                    pendingRequests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <img
-                              src={request.from.avatar}
-                              alt={request.from.name}
-                            />
-                          </Avatar>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {request.from.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {request.from.email}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              handleFriendRequest(request.id, "accepted")
-                            }
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              handleFriendRequest(request.id, "rejected")
-                            }
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Add Friend Dialog */}
-            <Dialog open={showAddFriend} onOpenChange={setShowAddFriend}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <UserPlus className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Friend</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Input
-                      type="email"
-                      placeholder="Enter friend's email"
-                      value={newFriendEmail}
-                      onChange={(e) => setNewFriendEmail(e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={handleAddFriend} className="w-full">
-                    Send Friend Request
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Search */}
-        <div className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search chats or friends"
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Chats List */}
-        <ScrollArea className="flex-1">
-          <div className="space-y-1">
-            {filteredUsers.map((user) => (
-              <button
-                key={user.id}
-                className={cn(
-                  "w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors",
-                  selectedUser?.id === user.id && "bg-muted"
-                )}
-                onClick={() => setSelectedUser(user)}
-              >
-                <Avatar className="h-12 w-12">
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="object-cover"
-                  />
-                </Avatar>
-                <div className="flex-1 text-left">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{user.name}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {user.lastMessageTime}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-sm text-muted-foreground truncate max-w-[180px]">
-                      {user.lastMessage}
-                    </p>
-                    {user.unreadCount > 0 && (
-                      <Badge variant="default" className="ml-2">
-                        {user.unreadCount}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Chat Area */}
-      {selectedUser ? (
-        <div className="flex-1 flex flex-col">
-          {/* Chat Header */}
-          <div className="p-4 border-b flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <img
-                  src={selectedUser.avatar}
-                  alt={selectedUser.name}
-                  className="object-cover"
-                />
-              </Avatar>
-              <div>
-                <p className="font-medium">{selectedUser.name}</p>
-                <p className="text-sm text-muted-foreground">online</p>
-              </div>
-            </div>
+    <div className="flex flex-col h-screen bg-background">
+      {!selectedUser || (isMobileView && showSidebar) ? (
+        <>
+          {/* Main Header */}
+          <div className="p-4 flex items-center justify-between border-b">
+            <h1 className="text-2xl font-bold">Discussions</h1>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon">
-                <Search className="h-5 w-5" />
+                <Camera className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon">
-                <Phone className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Video className="h-5 w-5" />
-              </Button>
-              <Separator orientation="vertical" className="h-6" />
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-5 w-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAddFriend(true)}
+              >
+                <UserPlus className="h-5 w-5" />
               </Button>
             </div>
           </div>
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
-              <AnimatePresence>
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className={cn(
-                      "flex",
-                      message.sender === "me" ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "max-w-[70%] rounded-lg p-3",
-                        message.sender === "me"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      )}
-                    >
-                      {message.type === "text" && <p>{message.content}</p>}
-                      {message.type === "file" && (
-                        <div className="flex items-center gap-2">
-                          <Paperclip className="h-4 w-4" />
-                          <a
-                            href={message.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline underline-offset-2"
-                          >
-                            {message.fileName}
-                          </a>
-                        </div>
-                      )}
-                      {message.type === "voice" && (
-                        <audio controls className="w-[200px]">
-                          <source src={message.fileUrl} type="audio/webm" />
-                        </audio>
-                      )}
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <p className="text-xs opacity-70">
-                          {message.timestamp.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        {message.sender === "me" && (
-                          <div className="flex">
-                            <Check
-                              className={cn(
-                                "h-3 w-3",
-                                message.read ? "text-blue-500" : "opacity-70"
-                              )}
-                            />
-                            <Check
-                              className={cn(
-                                "h-3 w-3 -ml-1",
-                                message.read ? "text-blue-500" : "opacity-70"
-                              )}
-                            />
-                          </div>
-                        )}
-                      </div>
+          {/* Tabs */}
+          <div className="px-4 pt-2">
+            <Tabs
+              defaultValue="all"
+              className="w-full"
+              onValueChange={setActiveTab}
+            >
+              <TabsList className="w-full justify-start gap-2 h-auto p-0 bg-transparent">
+                <TabsTrigger
+                  value="all"
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm transition-colors",
+                    activeTab === "all"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted"
+                  )}
+                >
+                  Toutes
+                </TabsTrigger>
+                <TabsTrigger
+                  value="unread"
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm transition-colors",
+                    activeTab === "unread"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted"
+                  )}
+                >
+                  Non lues
+                </TabsTrigger>
+                <TabsTrigger
+                  value="favorites"
+                  className={cn(
+                    "rounded-full px-4 py-2 text-sm transition-colors",
+                    activeTab === "favorites"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted"
+                  )}
+                >
+                  Favoris
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Search */}
+          <div className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher"
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Chat List */}
+          <ScrollArea className="flex-1">
+            <div className="space-y-1">
+              {filteredUsers.map((user) => (
+                <button
+                  key={user.id}
+                  className={cn(
+                    "w-full p-4 flex items-center gap-3 hover:bg-muted transition-colors",
+                    selectedUser?.id === user.id && "bg-muted"
+                  )}
+                  onClick={() => handleChatSelect(user)}
+                >
+                  <Avatar className="h-12 w-12">
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="object-cover"
+                    />
+                  </Avatar>
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">{user.name}</p>
+                      <span className="text-xs text-muted-foreground">
+                        {user.lastMessageTime}
+                      </span>
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                        {user.lastMessage}
+                      </p>
+                      {user.unreadCount > 0 && (
+                        <Badge variant="default" className="ml-2">
+                          {user.unreadCount}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           </ScrollArea>
 
-          {/* Input Area */}
-          <div className="p-4 border-t flex items-center gap-2">
-            <FileUpload onFileSelect={handleFileSelect} />
-            <VoiceRecorder onRecordingComplete={handleVoiceMessage} />
-            <Input
-              placeholder="Type a message"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              className="flex-1"
-            />
-            {newMessage && (
-              <Button size="icon" onClick={handleSendMessage}>
-                <Send className="h-5 w-5" />
+          {/* Bottom Navigation */}
+          <div className="border-t p-2">
+            <div className="flex justify-around items-center">
+              <Button
+                variant="ghost"
+                className="flex-1 flex flex-col items-center gap-1"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span className="text-xs">Actus</span>
               </Button>
-            )}
+              <Button
+                variant="ghost"
+                className="flex-1 flex flex-col items-center gap-1"
+              >
+                <Phone className="h-5 w-5" />
+                <span className="text-xs">Appels</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 flex flex-col items-center gap-1"
+              >
+                <Users className="h-5 w-5" />
+                <span className="text-xs">Communautés</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 flex flex-col items-center gap-1 text-primary"
+              >
+                <MessageSquare className="h-5 w-5" />
+                <span className="text-xs">Discussions</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 flex flex-col items-center gap-1"
+              >
+                <Settings className="h-5 w-5" />
+                <span className="text-xs">Paramètres</span>
+              </Button>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">
-              No conversation selected
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Choose a friend from the list to start chatting
-            </p>
-          </div>
-        </div>
+        <ChatArea />
       )}
     </div>
   );
