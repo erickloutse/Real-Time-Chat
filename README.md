@@ -2,6 +2,9 @@
 
 A modern, feature-rich chat application built with React, Node.js, and MongoDB.
 
+![Aperçu du projet 1](screenshot-1.png)
+![Aperçu du projet 2](screenshot-2.png)
+
 ## Features
 
 - 💬 Real-time messaging with WebSocket support
