@@ -1,25 +1,39 @@
-import { useState } from 'react';
-import { MessageSquare, Search, Menu, Phone, Video, MoreVertical, Send, Paperclip, Check, Mail, Lock, User, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ThemeProvider } from 'next-themes';
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { FileUpload } from '@/components/file-upload';
-import { VoiceRecorder } from '@/components/voice-recorder';
-import { ChatApp } from '@/components/chat-app';
+import { useState } from "react";
+import {
+  MessageSquare,
+  Search,
+  Menu,
+  Phone,
+  Video,
+  MoreVertical,
+  Send,
+  Paperclip,
+  Check,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ThemeProvider } from "next-themes";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { FileUpload } from "@/components/file-upload";
+import { VoiceRecorder } from "@/components/voice-recorder";
+import { ChatApp } from "@/components/chat-app";
 
 function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -36,7 +50,7 @@ function AuthPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-6 space-y-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 pointer-events-none" />
-        
+
         <div className="relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -48,12 +62,12 @@ function AuthPage() {
               <MessageSquare className="h-12 w-12 text-primary" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {isLogin ? 'Welcome back' : 'Create an account'}
+              {isLogin ? "Welcome back" : "Create an account"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {isLogin
-                ? 'Enter your credentials to access your account'
-                : 'Enter your information to create your account'}
+                ? "Enter your credentials to access your account"
+                : "Enter your information to create your account"}
             </p>
           </motion.div>
 
@@ -62,7 +76,7 @@ function AuthPage() {
               {!isLogin && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.2 }}
                 >
@@ -102,7 +116,7 @@ function AuthPage() {
             </div>
 
             <Button type="submit" className="w-full">
-              <span>{isLogin ? 'Sign in' : 'Sign up'}</span>
+              <span>{isLogin ? "Sign in" : "Sign up"}</span>
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
@@ -112,7 +126,9 @@ function AuthPage() {
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
             </button>
           </div>
 

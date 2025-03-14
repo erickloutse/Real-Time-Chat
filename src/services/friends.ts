@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface FriendRequest {
   id: string;
@@ -12,24 +12,41 @@ export interface FriendRequest {
     username: string;
     avatarUrl: string;
   };
-  status: 'pending' | 'accepted' | 'rejected';
+  status: "pending" | "accepted" | "rejected";
   createdAt: string;
 }
 
-export const sendFriendRequest = async (email: string): Promise<FriendRequest> => {
-  const response = await api.post('/friends/request', { email });
-  return response.data;
+export const sendFriendRequest = async (
+  email: string
+): Promise<FriendRequest> => {
+  try {
+    const response = await api.post("/friends/request", { email });
+    return response.data;
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    throw error;
+  }
 };
 
 export const respondToFriendRequest = async (
   requestId: string,
-  status: 'accepted' | 'rejected'
+  status: "accepted" | "rejected"
 ): Promise<FriendRequest> => {
-  const response = await api.put(`/friends/request/${requestId}`, { status });
-  return response.data;
+  try {
+    const response = await api.put(`/friends/request/${requestId}`, { status });
+    return response.data;
+  } catch (error) {
+    console.error("Error responding to friend request:", error);
+    throw error;
+  }
 };
 
 export const getFriendRequests = async (): Promise<FriendRequest[]> => {
-  const response = await api.get('/friends/requests');
-  return response.data;
+  try {
+    const response = await api.get("/friends/requests");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching friend requests:", error);
+    throw error;
+  }
 };

@@ -1,5 +1,5 @@
-import api from './api';
-import { Message } from './messages';
+import api from "./api";
+import { Message } from "./messages";
 
 export interface Conversation {
   id: string;
@@ -15,16 +15,35 @@ export interface Conversation {
 }
 
 export const getConversations = async (): Promise<Conversation[]> => {
-  const response = await api.get('/conversations');
-  return response.data;
+  try {
+    const response = await api.get("/conversations");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    throw error;
+  }
 };
 
-export const createConversation = async (participantId: string): Promise<Conversation> => {
-  const response = await api.post('/conversations', { participantId });
-  return response.data;
+export const createConversation = async (
+  participantId: string
+): Promise<Conversation> => {
+  try {
+    const response = await api.post("/conversations", { participantId });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    throw error;
+  }
 };
 
-export const getUnreadCount = async (): Promise<Array<{ conversationId: string; count: number }>> => {
-  const response = await api.get('/conversations/unread');
-  return response.data;
+export const getUnreadCount = async (): Promise<
+  Array<{ conversationId: string; count: number }>
+> => {
+  try {
+    const response = await api.get("/conversations/unread");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching unread counts:", error);
+    throw error;
+  }
 };
